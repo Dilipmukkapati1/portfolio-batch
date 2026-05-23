@@ -1,0 +1,26 @@
+{
+  "name": "portfolio-batch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Azure Batch job entrypoints for Portfolio Management (Phase 2+)",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@portfolio/contracts": "file:../portfolio-contracts",
+    "@portfolio/tax-engine": "file:../portfolio-tax-engine"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
