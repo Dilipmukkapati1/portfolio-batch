@@ -1,0 +1,69 @@
+name: Deploy prod
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  repository_dispatch:
+    types: [deploy-prod]
+
+concurrency:
+  group: deploy-prod-batch
+  cancel-in-progress: true
+
+env:
+  CHECKOUT_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: portfolio-batch
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Dilipmukkapati1/portfolio-contracts
+          path: portfolio-contracts
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Dilipmukkapati1/portfolio-tax-engine
+          path: portfolio-tax-engine
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build and package batch job
+        working-directory: portfolio-batch
+        run: |
+          cd ../portfolio-contracts && npm ci && npm run build
+          cd ../portfolio-tax-engine && npm ci && npm run build
+          npm ci && npm run build
+          tar -czf portfolio-batch.tar.gz dist package.json package-lock.json node_modules
+
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Upload batch package to Azure Storage
+        working-directory: portfolio-batch
+        run: |
+          az storage blob upload \
+            --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+            --container-name batch-packages-prod \
+            --name "latest/portfolio-batch.tar.gz" \
+            --file portfolio-batch.tar.gz \
+            --overwrite true
+          az storage blob upload \
+            --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+            --container-name batch-packages-prod \
+            --name "releases/${GITHUB_SHA}/portfolio-batch.tar.gz" \
+            --file portfolio-batch.tar.gz \
+            --overwrite true
