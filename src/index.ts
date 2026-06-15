@@ -16,9 +16,10 @@ function parseArgs(): Record<string, string> {
 
 async function runProjection(householdId: string, scenarioId: string): Promise<void> {
   console.log(`[batch] projection household=${householdId} scenario=${scenarioId}`);
-  const rules = loadRulePack(2025);
+  const taxYear = new Date().getFullYear();
+  const rules = loadRulePack(taxYear);
   const input: TaxYearInput = {
-    taxYear: 2025,
+    taxYear,
     filingStatus: "single",
     wages: 100000,
     selfEmploymentIncome: 0,
