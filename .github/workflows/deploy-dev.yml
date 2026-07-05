@@ -1,22 +1,24 @@
-name: Deploy prod
+name: Deploy dev
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   repository_dispatch:
-    types: [deploy-prod]
+    types: [deploy-dev]
 
 concurrency:
-  group: deploy-prod-batch
+  group: deploy-dev-batch
   cancel-in-progress: true
 
 env:
   BATCH_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref }}
-  LIB_REF: main
+  LIB_REF: develop
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,13 +58,13 @@ jobs:
         run: |
           az storage blob upload \
             --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
-            --container-name batch-packages-prod \
+            --container-name batch-packages-dev \
             --name "latest/portfolio-batch.tar.gz" \
             --file portfolio-batch.tar.gz \
             --overwrite true
           az storage blob upload \
             --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
-            --container-name batch-packages-prod \
+            --container-name batch-packages-dev \
             --name "releases/${GITHUB_SHA}/portfolio-batch.tar.gz" \
             --file portfolio-batch.tar.gz \
             --overwrite true
